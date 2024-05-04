@@ -1,19 +1,22 @@
 import * as THREE from 'three';
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
-let scene, camera, renderer;
-let playButton;
-let mixer1, mixer2, mixer1Hand, mixer2Hand, animations, animations2, animationsHand, animations2Hand;
-let clock = new THREE.Clock();
-let numModels = 2; // Change as needed
-// Array to store all mixers
-let allMixers = [];
-let modelsList = []; // List to store instantiated models
-let handsList = [];
+
+const soundURL = 'https://mouvmnt.com/models/Do_this.mp3';
+var scene, camera, renderer;
+var playButton;
+var mixer1, mixer2, mixer1Hand, mixer2Hand, animations, animations2, animationsHand, animations2Hand;
+var numModels = 2; // Change as needed
+
+var modelsList = []; // List to store instantiated models
+var handsList = [];
+var clock = new THREE.Clock();
+var clock2 = new THREE.Clock();
+var clock3 = new THREE.Clock();
+var clock4 = new THREE.Clock();
 
 init();
 animate();
-
 function init() {
     // Set up scene
     scene = new THREE.Scene();
@@ -31,32 +34,46 @@ function init() {
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setClearColor(0x00ffff); // Set background color to cyan
     renderer.setSize(window.innerWidth, window.innerHeight);
+
     document.body.appendChild(renderer.domElement);
 
     // Load 3D model (replace 'model.fbx' with your model)
     const loader = new FBXLoader();
-    // Create a loader instance
-    const loader2 = new FBXLoader();
+
     loader.load(
         'https://mouvmnt.com/models/KeyToy_Animated.fbx',
         function (keyToyObject) {
             // Hide loading screen
-            loader2.load(
+            loader.load(
                 'https://mouvmnt.com/models/KeyToy_Hand.fbx',
-                function (handObject) {
-                    // Hide loading screen
-                    document.getElementById('loading').style.display = 'none';
+                function (handObject1) {
+                    loader.load(
+                        'https://mouvmnt.com/models/KeyToy_Hand.fbx',
+                        function (handObject2) {
+                            // Hide loading screen
+                            document.getElementById('loading').style.display = 'none';
 
-                    // Show play button
-                    document.getElementById('playButton').style.display = 'block';
-                    playButton = document.getElementById('playButton');
-                    playButton.addEventListener('click', function () {
-                        // Remove play button
-                        playButton.remove();
-
-                        placeModels(keyToyObject);
-                        placeHands(handObject);
-                    });
+                            // Show play button
+                            document.getElementById('playButton').style.display = 'block';
+                            playButton = document.getElementById('playButton');
+                            playButton.addEventListener('click', function () {
+                                // Remove play button
+                                playButton.remove();
+                                placeModels(keyToyObject);
+                                placeHand(handObject1);
+                                placeHand2(handObject2);
+                                PlayIntroductionStep();
+                                //playNextStep();
+                            });
+                        },
+                        function (xhr) {
+                            //console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                        },
+                        function (error) {
+                            // Error callback
+                            console.error('Error loading model:', error);
+                        }
+                    );
                 },
                 function (xhr) {
                     //console.log((xhr.loaded / xhr.total * 100) + '% loaded');
@@ -79,9 +96,9 @@ function init() {
     );
 
     // Set up lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1);
     scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     directionalLight.position.set(0, 1, 0);
     scene.add(directionalLight);
 
@@ -91,7 +108,7 @@ function init() {
 
 function placeModels(model) {
     for (let i = 0; i < numModels; i++) {
-        const clonedModel = model.clone();
+        var clonedModel = model.clone();
 
         // Clone animations and add them to the cloned model
         if (model.animations && model.animations.length > 0) {
@@ -117,34 +134,33 @@ function placeModels(model) {
 
     // Check if the first model has animations
     if (modelsList.length > 0) {
-        const firstModel = modelsList[0];
-        const secondModel = modelsList[1];
+        var firstModel = modelsList[0];
+        var secondModel = modelsList[1];
         animations = firstModel.animations;
         animations2 = secondModel.animations;
         if (animations && animations.length > 0) {
             //console.log("Animations found for the first model:", animations);
             mixer1 = new THREE.AnimationMixer(firstModel);
-            allMixers.push(mixer1);
             // Filter out position and Z rotation tracks from the animation
             animations[0].tracks = animations[0].tracks.filter(track => {
                 if (track.name.includes('.position')) return false; // Exclude position tracks
                 if (track.name.includes('Keytoy.quaternion')) {
-                    const values = track.values;
+                    var values = track.values;
                     for (let i = 0; i < values.length; i += 4) {
                         // Access quaternion components
-                        const xValue = values[i];
-                        const yValue = values[i + 1];
-                        const zValue = values[i + 2];
-                        const wValue = values[i + 3];
+                        var xValue = values[i];
+                        var yValue = values[i + 1];
+                        var zValue = values[i + 2];
+                        var wValue = values[i + 3];
 
                         // Create quaternion from current values
-                        const quaternion = new THREE.Quaternion(xValue, yValue, zValue, wValue);
+                        var quaternion = new THREE.Quaternion(xValue, yValue, zValue, wValue);
 
                         // Convert desired rotation (-Math.PI / 5 on Y-axis) to quaternion
-                        const desiredRotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI / 5, 0, 'XYZ'));
+                        var desiredRotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI / 5, 0, 'XYZ'));
 
                         // Combine current quaternion with desired rotation
-                        const finalQuaternion = quaternion.multiply(desiredRotation);
+                        var finalQuaternion = quaternion.multiply(desiredRotation);
 
                         // Set the modified quaternion back to the track values
                         values[i] = finalQuaternion.x;
@@ -156,8 +172,7 @@ function placeModels(model) {
                 return true;
             });
             //Play animation
-            const action = mixer1.clipAction(animations[0]);
-            action.play();
+
             //console.log("The first animation is played on the first model.");
         } else {
             //console.log("No animations found for the first model.");
@@ -166,27 +181,26 @@ function placeModels(model) {
         if (animations2 && animations2.length > 0) {
             //console.log("Animations found for the second model:", animations2);
             mixer2 = new THREE.AnimationMixer(secondModel);
-            allMixers.push(mixer2);
             // Filter out position and Z rotation tracks from the animation
             animations2[0].tracks = animations2[0].tracks.filter(track => {
                 if (track.name.includes('.position')) return false; // Exclude position tracks
                 if (track.name.includes('Keytoy.quaternion')) {
-                    const values = track.values;
+                    var values = track.values;
                     for (let i = 0; i < values.length; i += 4) {
                         // Access quaternion components
-                        const xValue = values[i];
-                        const yValue = values[i + 1];
-                        const zValue = values[i + 2];
-                        const wValue = values[i + 3];
+                        var xValue = values[i];
+                        var yValue = values[i + 1];
+                        var zValue = values[i + 2];
+                        var wValue = values[i + 3];
 
                         // Create quaternion from current values
-                        const quaternion = new THREE.Quaternion(xValue, yValue, zValue, wValue);
+                        var quaternion = new THREE.Quaternion(xValue, yValue, zValue, wValue);
 
                         // Convert desired rotation (-Math.PI / 5 on Y-axis) to quaternion
-                        const desiredRotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI / 5, 0, 'XYZ'));
+                        var desiredRotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI / 5, 0, 'XYZ'));
 
                         // Combine current quaternion with desired rotation
-                        const finalQuaternion = quaternion.multiply(desiredRotation);
+                        var finalQuaternion = quaternion.multiply(desiredRotation);
 
                         // Set the modified quaternion back to the track values
                         values[i] = finalQuaternion.x;
@@ -198,8 +212,7 @@ function placeModels(model) {
                 return true;
             });
             //Play animation
-            const action = mixer2.clipAction(animations2[0]);
-            action.play();
+
             //console.log("The first animation is played on the first model.");
         } else {
             //console.log("No animations found for the first model.");
@@ -208,131 +221,178 @@ function placeModels(model) {
 
 }
 
+function PlayIntroductionStep() {
+    // Load sound
+    const audioLoader = new THREE.AudioLoader();
+    const listener = new THREE.AudioListener();
+    const audio = new THREE.Audio(listener);
+    scene.add(listener);
 
-function placeHands(model) {
-    for (let i = 0; i < numModels; i++) {
-        const clonedHand = model.clone();
+    audioLoader.load(soundURL, function (buffer) {
+        audio.setBuffer(buffer);
+        audio.setLoop(false);
+        audio.setVolume(0.5);
+        audio.play();
 
-        // Clone animations and add them to the cloned model
-        if (model.animations && model.animations.length > 0) {
-            clonedHand.animations = [];
-            model.animations.forEach(animation => {
-                clonedHand.animations.push(animation.clone());
-            });
+        // Show hand model
+        const startPosition = new THREE.Vector3(-20, 1, 15);
+        const endPosition = new THREE.Vector3(-15, 1, 15);
+        const handModel = handsList[0];
+        handModel.position.copy(startPosition);
+        handModel.visible = true;
+
+        const duckModel = modelsList[0];
+        // Animate position
+        const animationDuration = 1000; // Duration of animation in milliseconds
+        const animationStartTime = Date.now();
+        // Animation Hand
+        mixer1Hand = new THREE.AnimationMixer(handModel);
+        const action = mixer1Hand.clipAction(animationsHand[0]);
+        action.setLoop(THREE.LoopOnce);
+        action.clampWhenFinished = true;
+
+        //Animation Duck
+        mixer1 = new THREE.AnimationMixer(duckModel);
+        const actionDuck1 = mixer1.clipAction(animations[0]);
+        actionDuck1.setLoop(THREE.LoopOnce);
+        actionDuck1.clampWhenFinished = true;
+
+
+        function animatePosition() {
+            const now = Date.now();
+            const elapsedTime = now - animationStartTime;
+            const t = Math.min(1, elapsedTime / animationDuration); // Normalize time between 0 and 1
+
+            const newPosition = new THREE.Vector3().lerpVectors(startPosition, endPosition, t);
+            handModel.position.copy(newPosition);
+
+            if (t < 1) {
+                requestAnimationFrame(animatePosition); // Continue animation until reaching the end
+            } else {
+                // Start animation after translation completes
+                setTimeout(() => {
+                    action.play();
+                    actionDuck1.play();
+                }, 200); // Delay animation start by 1 second
+            }
         }
-        if (i === 0) {
-            // Position first model
-            clonedHand.position.set(-22, 3, 25); // Set x position to 5
-            clonedHand.rotateY(-Math.PI / 1.6);
-        } else {
-            // Position second model
-            clonedHand.position.set(8, 3, 25); // Set x position to 5
-            clonedHand.rotateY(-Math.PI / 1.6);
+
+        function animateToInitialPosition() {
+            // Define initial and final positions
+            const startPosition = new THREE.Vector3(-15, 1, 15); // End position of the animation
+            const endPosition = new THREE.Vector3(-20, 1, 15); // Start position of the animation
+
+            // Calculate animation duration
+            const animationDuration = 1000; // Duration of animation in milliseconds
+            const animationStartTime = Date.now();
+
+            // Define animation function
+            function animate() {
+                const now = Date.now();
+                const elapsedTime = now - animationStartTime;
+                const t = Math.min(1, elapsedTime / animationDuration); // Normalize time between 0 and 1
+
+                // Interpolate position
+                const newPosition = new THREE.Vector3().lerpVectors(startPosition, endPosition, t);
+                handModel.position.copy(newPosition);
+
+                // Continue animation until reaching the end
+                if (t < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                }
+            }
+
+            // Start animation
+            animate();
         }
-        scene.add(clonedHand);
-        // Add cloned model to the list
-        handsList.push(clonedHand);
-    }
+
+        animatePosition();
+
+        // Pause animation at specific times
+        setTimeout(() => {
+            // Pause animation after 1 second
+            action.reset(); // Reset animation
+            action.play(); // Start animation
+            actionDuck1.reset();
+            actionDuck1.play();
+        }, 4000); // Pause animation after 2 seconds
+
+        setTimeout(() => {
+            // Resume animation after 3 seconds
+            action.reset(); // Reset animation
+            action.play(); // Start animation
+            actionDuck1.reset();
+            actionDuck1.play();
+        }, 7000); // Resume animation after 3 seconds
+
+        setTimeout(() => {
+            // Pause animation after 4 seconds
+            action.paused = true;
+            actionDuck1.play();
+            mixer1.addEventListener('finished', () => {
+                handModel.visible = false;
+                playNextStep();
+            })
+            animateToInitialPosition();
+        }, 10000); // Pause animation after 4 seconds
+    });
+}
+
+function playNextStep() {
+    const startPosition = new THREE.Vector3(6, 2, 10);
+    const endPosition = new THREE.Vector3(13, 4, 30);
+    var hand2Model = handsList[1];
+    hand2Model.visible = true;
+    hand2Model.position.copy(new THREE.Vector3(8, 0, 10));
+
+
+}
+
+
+function placeHand(handModel) {
+    // Position first model
+    handModel.position.set(-15, 1, 20); // Set x position to -5
+    handModel.rotateY(-Math.PI / 5);
+    //handModel.visible = false;
+    scene.add(handModel);
+    handsList.push(handModel);
+
     if (handsList.length > 0) {
-        const firstHand = handsList[0];
-        const secondHand = handsList[1];
+        var firstHand = handsList[0];
         animationsHand = firstHand.animations;
-        animations2Hand = secondHand.animations;
         if (animationsHand && animationsHand.length > 0) {
-            // console.log("Animations found for the first hand model:", animationsHand);
             mixer1Hand = new THREE.AnimationMixer(firstHand);
-            allMixers.push(mixer1Hand);
             //Play animation
-            const action = mixer1Hand.clipAction(animationsHand[0]);
-            action.play()
-            // Filter out position and Z rotation tracks from the animation
-            // animationsHand[0].tracks = animationsHand[0].tracks.filter(track => {
-            //     if (track.name.includes('.position')) return false; // Exclude position tracks
-            //     if (track.name.includes('Keytoy.quaternion')) {
-            //         const values = track.values;
-            //         for (let i = 0; i < values.length; i += 4) {
-            //             // Access quaternion components
-            //             const xValue = values[i];
-            //             const yValue = values[i + 1];
-            //             const zValue = values[i + 2];
-            //             const wValue = values[i + 3];
-
-            //             // Create quaternion from current values
-            //             const quaternion = new THREE.Quaternion(xValue, yValue, zValue, wValue);
-
-            //             // Convert desired rotation (-Math.PI / 5 on Y-axis) to quaternion
-            //             const desiredRotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI / 5, 0, 'XYZ'));
-
-            //             // Combine current quaternion with desired rotation
-            //             const finalQuaternion = quaternion.multiply(desiredRotation);
-
-            //             // Set the modified quaternion back to the track values
-            //             values[i] = finalQuaternion.x;
-            //             values[i + 1] = finalQuaternion.y;
-            //             values[i + 2] = finalQuaternion.z;
-            //             values[i + 3] = finalQuaternion.w;
-            //         }
-            //     }
-            //     return true;
-            // });
 
             //console.log("The first animation is played on the first model.");
         } else {
             //console.log("No animations found for the first model.");
         }
-
-        if (animations2Hand && animations2Hand.length > 0) {
-            //console.log("Animations found for the second hand model:", animations2Hand);
-            mixer2Hand = new THREE.AnimationMixer(secondHand);
-            allMixers.push(mixer2Hand);
-            //Play animation
-            const action = mixer2Hand.clipAction(animations2Hand[0]);
-            action.play();
-            // Filter out position and Z rotation tracks from the animation
-            // animations2Hand[0].tracks = animations2Hand[0].tracks.filter(track => {
-            //     if (track.name.includes('.position')) return false; // Exclude position tracks
-            //     if (track.name.includes('Keytoy.quaternion')) {
-            //         const values = track.values;
-            //         for (let i = 0; i < values.length; i += 4) {
-            //             // Access quaternion components
-            //             const xValue = values[i];
-            //             const yValue = values[i + 1];
-            //             const zValue = values[i + 2];
-            //             const wValue = values[i + 3];
-
-            //             // Create quaternion from current values
-            //             const quaternion = new THREE.Quaternion(xValue, yValue, zValue, wValue);
-
-            //             // Convert desired rotation (-Math.PI / 5 on Y-axis) to quaternion
-            //             const desiredRotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI / 5, 0, 'XYZ'));
-
-            //             // Combine current quaternion with desired rotation
-            //             const finalQuaternion = quaternion.multiply(desiredRotation);
-
-            //             // Set the modified quaternion back to the track values
-            //             values[i] = finalQuaternion.x;
-            //             values[i + 1] = finalQuaternion.y;
-            //             values[i + 2] = finalQuaternion.z;
-            //             values[i + 3] = finalQuaternion.w;
-            //         }
-            //     }
-            //     return true;
-            // });
-
-            //console.log("The first animation is played on the first model.");
-        } else {
-            //console.log("No animations found for the first model.");
-        }
-
     }
 }
 
 
-function PlayAnimation() {
-    //Play animation
-    const action = mixer1Hand.clipAction(animationsHand[0]);
-    action.play();
+function placeHand2(handModel) {
+    // Position first model
+    handModel.position.set(8, 1, 10); // Set x position to -5
+    handModel.rotateY(-Math.PI / 5);
+    scene.add(handModel);
+    handsList.push(handModel);
+
+    var secondHand = handsList[1];
+    animations2Hand = secondHand.animations;
+    if (animations2Hand && animations2Hand.length > 0) {
+        mixer2Hand = new THREE.AnimationMixer(secondHand);
+        //Play animation
+
+        //console.log("The first animation is played on the first model.");
+    } else {
+        //console.log("No animations found for the first model.");
+    }
+
 }
+
 
 
 function onWindowResize() {
@@ -353,11 +413,18 @@ function onWindowResize() {
 
 function animate() {
     requestAnimationFrame(animate);
-    // Update all mixers
-    allMixers.forEach(mixer => {
-        mixer.update(clock.getDelta());
-    });
-
+    if (mixer1) {
+        mixer1.update(clock.getDelta());
+    }
+    if (mixer2) {
+        mixer2.update(clock2.getDelta());
+    }
+    if (mixer1Hand) {
+        mixer1Hand.update(clock3.getDelta());
+    }
+    if (mixer2Hand) {
+        mixer2Hand.update(clock4.getDelta());
+    }
     renderer.render(scene, camera);
 }
 
