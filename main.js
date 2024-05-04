@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 
 
-const soundURL = 'https://mouvmnt.com/models/Do_this.mp3';
+const soundURL = 'Do_this.mp3';
 var scene, camera, renderer;
 var playButton;
 var mixer1, mixer2, mixer1Hand, mixer2Hand, animations, animations2, animationsHand, animations2Hand;
@@ -41,14 +41,14 @@ function init() {
     const loader = new FBXLoader();
 
     loader.load(
-        'https://mouvmnt.com/models/KeyToy_Animated.fbx',
+        'KeyToy_Animated.fbx',
         function (keyToyObject) {
             // Hide loading screen
             loader.load(
-                'https://mouvmnt.com/models/KeyToy_Hand.fbx',
+                'KeyToy_Hand.fbx',
                 function (handObject1) {
                     loader.load(
-                        'https://mouvmnt.com/models/KeyToy_Hand.fbx',
+                        'KeyToy_Hand.fbx',
                         function (handObject2) {
                             // Hide loading screen
                             document.getElementById('loading').style.display = 'none';
